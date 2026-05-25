@@ -7,7 +7,6 @@ import {
 } from "@/lib/game/score.store";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 function toInt(value: string | null, fallback: number): number {
   const parsed = Number.parseInt(value ?? "", 10);

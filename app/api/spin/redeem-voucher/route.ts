@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { redeemVoucherByCode } from "@/lib/spins/google-sheets-store";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {

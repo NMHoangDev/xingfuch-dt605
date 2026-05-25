@@ -6,7 +6,6 @@ import {
 } from "@/lib/spins/store";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -32,7 +31,9 @@ export async function PATCH(req: NextRequest) {
 
     if (!Number.isFinite(parsed) || parsed < 0) {
       return NextResponse.json(
-        { error: "voucherActivationDelayMinutes must be a non-negative number" },
+        {
+          error: "voucherActivationDelayMinutes must be a non-negative number",
+        },
         { status: 400 },
       );
     }
