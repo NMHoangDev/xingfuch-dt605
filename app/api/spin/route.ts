@@ -4,6 +4,7 @@ import { PLAY_SESSION_MISMATCH_MESSAGE } from "@/lib/spins/play-session-constant
 import { doSpinAndPersist } from "@/lib/spins/google-sheets-store";
 
 export const runtime = "nodejs";
+export const dynamic = "force-static";
 
 export async function POST(req: NextRequest) {
   try {

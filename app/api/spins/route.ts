@@ -8,7 +8,7 @@ import {
 import { consumeRewardFirebase } from "@/lib/spins/firebase-store";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 
 function shouldUseFirebaseBackend() {
   return process.env.SPIN_DATA_BACKEND === "firebase";

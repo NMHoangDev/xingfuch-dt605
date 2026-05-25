@@ -6,6 +6,7 @@ import {
 } from "@/lib/spins/store";
 
 export const runtime = "nodejs";
+export const dynamic = "force-static";
 
 export async function GET() {
   try {

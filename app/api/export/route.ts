@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getAllSpinRecords } from "@/lib/spins/store";
 
 export const runtime = "nodejs";
+export const dynamic = "force-static";
 
 const TITLE = "TỔNG HỢP SỐ LƯỢNG QUAY SPIN UP TẠI XING FUCHA";
 

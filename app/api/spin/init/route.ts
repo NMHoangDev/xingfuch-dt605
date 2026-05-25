@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { spinPageInit } from "@/lib/spins/google-sheets-store";
 
 export const runtime = "nodejs";
+export const dynamic = "force-static";
 
 /** Gộp kiểm tra session/device + điều kiện quay (nếu có location) trong một request. */
 export async function POST(req: NextRequest) {
