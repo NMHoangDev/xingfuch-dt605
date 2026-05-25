@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  output: "standalone",
+  output: "export",
   transpilePackages: ["motion"],
 
   // ✅ Cache Headers - Reduce bandwidth by 75%
