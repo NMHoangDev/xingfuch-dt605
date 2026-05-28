@@ -116,6 +116,11 @@ function formatTime(value?: string | null) {
   }
 }
 
+function isVoucherExpired(expiresAt?: string | null) {
+  if (!expiresAt) return false;
+  return new Date(expiresAt).getTime() < Date.now();
+}
+
 function getRewardConditionNote(reward?: { id: number } | null) {
   if (!reward) return null;
   if (reward.id === 0) return "Không áp dụng cho topping 10k";
@@ -444,10 +449,11 @@ export default function PageContent() {
   );
 
   /** Giới hạn lượt quay theo localStorage + ngày lịch */
+  const isCampaignEnded = typeof window !== "undefined" ? (new Date() >= new Date("2026-06-30T16:59:59.999Z")) : false;
   const hasReachedSpinLimit =
     quota?.day === todayKey() &&
     quota.spinsUsedToday >= quota.maxSpinsToday;
-  const localSpinBlocked = hasReachedSpinLimit;
+  const localSpinBlocked = hasReachedSpinLimit || isCampaignEnded;
 
   const persistWallet = (nextWallet: WalletStore) => {
     setWallet(nextWallet);
@@ -536,8 +542,13 @@ export default function PageContent() {
         target: number;
         spinReward: SpinReward;
       };
-      const outcome = await runWithCrossTabStorageLock((): SpinOk | "limit" => {
+      const outcome = await runWithCrossTabStorageLock((): SpinOk | "limit" | "ended" => {
         const t = todayKey();
+        const now = new Date();
+        const deadline = new Date("2026-06-30T16:59:59.999Z");
+        if (now >= deadline) {
+          return "ended";
+        }
         const rawQ = readJson<DailyQuotaStore>(DAILY_QUOTA_KEY);
         const q: DailyQuotaStore =
           rawQ && rawQ.day === t
@@ -560,9 +571,13 @@ export default function PageContent() {
           return "limit";
         }
         const { reward, index } = selectWeightedReward();
-        const now = new Date();
-        const expiresAt = new Date(now.getTime());
-        expiresAt.setMonth(expiresAt.getMonth() + 1);
+        let expiresAt: Date;
+        if (now < deadline) {
+          expiresAt = deadline;
+        } else {
+          expiresAt = new Date(now.getTime());
+          expiresAt.setMonth(expiresAt.getMonth() + 1);
+        }
         const usableFromIso = now.toISOString();
         const expiresIso = expiresAt.toISOString();
         const voucherCode = generateLocalVoucherCode(
@@ -595,6 +610,10 @@ export default function PageContent() {
         return { duration, target, spinReward };
       });
 
+      if (outcome === "ended") {
+        setFormError("Chương trình quay thưởng đã kết thúc.");
+        return;
+      }
       if (outcome === "limit") {
         setFormError(
           `Đã dùng hết ${MAX_SPINS_PER_DAY} lượt quay hôm nay cho thiết bị này.`,
@@ -659,6 +678,9 @@ export default function PageContent() {
         const consumedReward = current.items.find(
           (item) => item.id === rewardId,
         );
+        if (consumedReward && isVoucherExpired(consumedReward.voucherExpiresAt)) {
+          throw new Error("Voucher này đã hết hạn sử dụng.");
+        }
         const voucherCode = consumedReward?.voucherCodes?.[0];
         if (!voucherCode) {
           throw new Error("Không tìm thấy mã voucher để sử dụng.");
@@ -1010,9 +1032,11 @@ export default function PageContent() {
               >
                 {isSpinning
                   ? "Đang quay..."
-                  : hasReachedSpinLimit
-                    ? "Đã hết lượt quay hôm nay"
-                    : "Quay ngay"}
+                  : isCampaignEnded
+                    ? "Chương trình đã kết thúc"
+                    : hasReachedSpinLimit
+                      ? "Đã hết lượt quay hôm nay"
+                      : "Quay ngay"}
               </button>
 
               {formError && (
@@ -1036,8 +1060,7 @@ export default function PageContent() {
                 >
                   <div className="space-y-3 text-sm font-semibold leading-6 text-[#6c1a1f] bg-white p-2 rounded-xl">
                     <p>
-                      Voucher có thể dùng ngay sau khi trúng, hết hạn sau 1
-                      tháng và mỗi ngày dùng tối đa 3 voucher.
+                      Voucher có thể dùng ngay sau khi trúng, hạn sử dụng đến ngày 30/06/2026 và mỗi ngày dùng tối đa 3 voucher.
                     </p>
                   </div>
                   <button
@@ -1122,15 +1145,18 @@ export default function PageContent() {
                       disabled={
                         usedRewardCount >= 3 ||
                         item.quantity <= 0 ||
-                        useRewardLoading
+                        useRewardLoading ||
+                        isVoucherExpired(item.voucherExpiresAt)
                       }
                       className="mt-3 w-full rounded-2xl bg-[#d81b21] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {useRewardLoading
                         ? "Đang xử lý..."
-                        : usedRewardCount >= 3
-                          ? "Hôm nay đã dùng đủ 3 voucher"
-                          : "Sử dụng voucher này"}
+                        : isVoucherExpired(item.voucherExpiresAt)
+                          ? "Voucher đã hết hạn"
+                          : usedRewardCount >= 3
+                            ? "Hôm nay đã dùng đủ 3 voucher"
+                            : "Sử dụng voucher này"}
                     </button>
                   </div>
                 ))}
