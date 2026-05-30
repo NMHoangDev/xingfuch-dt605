@@ -19,7 +19,7 @@ type Wallet = {
 const APP_VERSION_KEY = "xfc-app-version";
 const WALLET_KEY = "xfc-wallet-v2";
 const DEPLOYMENT_VERSION =
-  process.env.NEXT_PUBLIC_DEPLOYMENT_VERSION || "2026-05-30";
+  process.env.NEXT_PUBLIC_DEPLOYMENT_VERSION || "2026-05-30-v3";
 
 export function initializeAutoReset() {
   if (typeof window === "undefined") return;
