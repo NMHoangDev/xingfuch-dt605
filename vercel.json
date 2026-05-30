@@ -1,6 +1,5 @@
 {
   "buildCommand": "next build",
-  "postBuildCommand": "sh vercel-post-build.sh || true",
   "outputDirectory": "out",
   "installCommand": "npm install",
   "env": {
