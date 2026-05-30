@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     // Fixed dates: June 1 to June 30
     const year = new Date().getFullYear();
     const juneFirstUsableFrom = new Date(year, 5, 1, 0, 0, 0).toISOString(); // June 1
-    const juneThirtieth = new Date(year, 6, 1, 0, 0, 0).toISOString(); // July 1 (so expires on June 30)
+    const juneThirtieth = new Date(year, 5, 30, 23, 59, 59, 999).toISOString(); // June 30
 
     // Get all vouchers
     const snapshot = await db

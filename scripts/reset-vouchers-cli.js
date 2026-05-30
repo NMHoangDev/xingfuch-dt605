@@ -37,7 +37,7 @@ const db = admin.firestore();
 async function resetVouchers() {
   const year = new Date().getFullYear();
   const juneFirstUsableFrom = new Date(year, 5, 1, 0, 0, 0).toISOString(); // June 1
-  const juneThirtieth = new Date(year, 6, 1, 0, 0, 0).toISOString(); // July 1
+  const juneThirtieth = new Date(year, 5, 30, 23, 59, 59, 999).toISOString(); // June 30
 
   console.log("🔄 Fetching all vouchers from Firebase...");
 

@@ -50,7 +50,7 @@ function resetVouchersInLocalStorage() {
 
     // June 1 to June 30
     const juneFirst = new Date(year, 5, 1, 0, 0, 0).toISOString();
-    const juneThirtieth = new Date(year, 6, 1, 0, 0, 0).toISOString(); // July 1 = end of June 30
+    const juneThirtieth = new Date(year, 5, 30, 23, 59, 59, 999).toISOString();
 
     let resetCount = 0;
 

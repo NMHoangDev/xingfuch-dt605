@@ -122,6 +122,11 @@ function isVoucherExpired(expiresAt?: string | null) {
   return new Date(expiresAt).getTime() < Date.now();
 }
 
+function isVoucherNotUsableYet(usableFrom?: string | null) {
+  if (!usableFrom) return false;
+  return Date.now() < new Date(usableFrom).getTime();
+}
+
 function getRewardConditionNote(reward?: { id: number } | null) {
   if (!reward) return null;
   if (reward.id === 0) return "Không áp dụng cho topping 10k";
@@ -572,15 +577,9 @@ export default function PageContent() {
             return "limit";
           }
           const { reward, index } = selectWeightedReward();
-          let expiresAt: Date;
-          if (now < deadline) {
-            expiresAt = deadline;
-          } else {
-            expiresAt = new Date(now.getTime());
-            expiresAt.setMonth(expiresAt.getMonth() + 1);
-          }
-          const usableFromIso = now.toISOString();
-          const expiresIso = expiresAt.toISOString();
+          const year = now.getFullYear();
+          const usableFromIso = new Date(year, 5, 1, 0, 0, 0).toISOString();
+          const expiresIso = new Date(year, 5, 30, 23, 59, 59, 999).toISOString();
           const voucherCode = generateLocalVoucherCode(
             reward.code ?? String(reward.id),
           );
@@ -685,6 +684,12 @@ export default function PageContent() {
           isVoucherExpired(consumedReward.voucherExpiresAt)
         ) {
           throw new Error("Voucher này đã hết hạn sử dụng.");
+        }
+        if (
+          consumedReward &&
+          isVoucherNotUsableYet(consumedReward.voucherUsableFrom)
+        ) {
+          throw new Error("Voucher này chưa tới hạn sử dụng.");
         }
         const voucherCode = consumedReward?.voucherCodes?.[0];
         if (!voucherCode) {
@@ -1151,7 +1156,8 @@ export default function PageContent() {
                         usedRewardCount >= 3 ||
                         item.quantity <= 0 ||
                         useRewardLoading ||
-                        isVoucherExpired(item.voucherExpiresAt)
+                        isVoucherExpired(item.voucherExpiresAt) ||
+                        isVoucherNotUsableYet(item.voucherUsableFrom)
                       }
                       className="mt-3 w-full rounded-2xl bg-[#d81b21] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -1159,9 +1165,11 @@ export default function PageContent() {
                         ? "Đang xử lý..."
                         : isVoucherExpired(item.voucherExpiresAt)
                           ? "Voucher đã hết hạn"
-                          : usedRewardCount >= 3
-                            ? "Hôm nay đã dùng đủ 3 voucher"
-                            : "Sử dụng voucher này"}
+                          : isVoucherNotUsableYet(item.voucherUsableFrom)
+                            ? "Chưa tới hạn sử dụng"
+                            : usedRewardCount >= 3
+                              ? "Hôm nay đã dùng đủ 3 voucher"
+                              : "Sử dụng voucher này"}
                     </button>
                   </div>
                 ))}
