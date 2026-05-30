@@ -21,6 +21,7 @@ import logoWebp from "@/assets/logo.webp";
 import { REWARDS, type Reward } from "@/lib/rewards/rewards";
 import { selectWeightedReward } from "@/lib/rewards/reward.service";
 import { runWithCrossTabStorageLock } from "@/lib/spins/cross-tab-lock";
+import { initializeAutoReset } from "@/lib/auto-reset-vouchers";
 
 type UserInfo = { name: string; phone: string };
 type ActiveTab = "spin" | "rewards";
@@ -285,6 +286,9 @@ export default function PageContent() {
   const phoneRegex = /^(0|84)(3|5|7|8|9)([0-9]{8})$/;
 
   useEffect(() => {
+    // Auto-reset vouchers on app load if version changed
+    initializeAutoReset();
+
     setWallet(
       readJson<WalletStore>(WALLET_KEY) ?? { items: [], updatedAt: "" },
     );
@@ -297,10 +301,7 @@ export default function PageContent() {
         spinsUsedToday: 0,
         maxSpinsToday: MAX_SPINS_PER_DAY,
       };
-      window.localStorage.setItem(
-        DAILY_QUOTA_KEY,
-        JSON.stringify(nextQuota),
-      );
+      window.localStorage.setItem(DAILY_QUOTA_KEY, JSON.stringify(nextQuota));
     } else {
       nextQuota = {
         day: raw.day,
@@ -311,10 +312,7 @@ export default function PageContent() {
         maxSpinsToday: MAX_SPINS_PER_DAY,
         ...(raw.profileKey ? { profileKey: raw.profileKey } : {}),
       };
-      window.localStorage.setItem(
-        DAILY_QUOTA_KEY,
-        JSON.stringify(nextQuota),
-      );
+      window.localStorage.setItem(DAILY_QUOTA_KEY, JSON.stringify(nextQuota));
     }
     setQuota(nextQuota);
     setUsedRewardCount(readUsedRewardCount());
@@ -449,10 +447,12 @@ export default function PageContent() {
   );
 
   /** Giới hạn lượt quay theo localStorage + ngày lịch */
-  const isCampaignEnded = typeof window !== "undefined" ? (new Date() >= new Date("2026-06-30T16:59:59.999Z")) : false;
+  const isCampaignEnded =
+    typeof window !== "undefined"
+      ? new Date() >= new Date("2026-06-30T16:59:59.999Z")
+      : false;
   const hasReachedSpinLimit =
-    quota?.day === todayKey() &&
-    quota.spinsUsedToday >= quota.maxSpinsToday;
+    quota?.day === todayKey() && quota.spinsUsedToday >= quota.maxSpinsToday;
   const localSpinBlocked = hasReachedSpinLimit || isCampaignEnded;
 
   const persistWallet = (nextWallet: WalletStore) => {
@@ -542,73 +542,75 @@ export default function PageContent() {
         target: number;
         spinReward: SpinReward;
       };
-      const outcome = await runWithCrossTabStorageLock((): SpinOk | "limit" | "ended" => {
-        const t = todayKey();
-        const now = new Date();
-        const deadline = new Date("2026-06-30T16:59:59.999Z");
-        if (now >= deadline) {
-          return "ended";
-        }
-        const rawQ = readJson<DailyQuotaStore>(DAILY_QUOTA_KEY);
-        const q: DailyQuotaStore =
-          rawQ && rawQ.day === t
-            ? {
-                day: t,
-                spinsUsedToday: Math.min(
-                  Math.max(0, Number(rawQ.spinsUsedToday ?? 0)),
-                  MAX_SPINS_PER_DAY,
-                ),
-                maxSpinsToday: MAX_SPINS_PER_DAY,
-                ...(rawQ.profileKey ? { profileKey: rawQ.profileKey } : {}),
-              }
-            : {
-                day: t,
-                spinsUsedToday: 0,
-                maxSpinsToday: MAX_SPINS_PER_DAY,
-              };
-        if (q.spinsUsedToday >= q.maxSpinsToday) {
-          persistQuota(q);
-          return "limit";
-        }
-        const { reward, index } = selectWeightedReward();
-        let expiresAt: Date;
-        if (now < deadline) {
-          expiresAt = deadline;
-        } else {
-          expiresAt = new Date(now.getTime());
-          expiresAt.setMonth(expiresAt.getMonth() + 1);
-        }
-        const usableFromIso = now.toISOString();
-        const expiresIso = expiresAt.toISOString();
-        const voucherCode = generateLocalVoucherCode(
-          reward.code ?? String(reward.id),
-        );
-        const spinReward: SpinReward = {
-          ...reward,
-          voucherDelayMinutes: 0,
-          voucherUsableFrom: usableFromIso,
-          voucherExpiresAt: expiresIso,
-        };
-        const angle = 360 / REWARDS.length;
-        const extraSpins = 6 + Math.floor(Math.random() * 3);
-        const offset = (Math.random() - 0.5) * (angle * 0.42);
-        const target =
-          extraSpins * 360 + (360 - (index * angle + angle / 2)) + offset;
-        const receivedAt = now.toISOString();
-        const duration = 3000 + Math.floor(Math.random() * 800);
-        persistProfile({ name, phone });
-        addRewardToWallet(spinReward, receivedAt, {
-          voucherCode,
-          locationId: DEFAULT_PLAY_LOCATION,
-        });
-        persistQuota({
-          day: t,
-          spinsUsedToday: q.spinsUsedToday + 1,
-          maxSpinsToday: MAX_SPINS_PER_DAY,
-          profileKey: createProfileKey(name, phone),
-        });
-        return { duration, target, spinReward };
-      });
+      const outcome = await runWithCrossTabStorageLock(
+        (): SpinOk | "limit" | "ended" => {
+          const t = todayKey();
+          const now = new Date();
+          const deadline = new Date("2026-06-30T16:59:59.999Z");
+          if (now >= deadline) {
+            return "ended";
+          }
+          const rawQ = readJson<DailyQuotaStore>(DAILY_QUOTA_KEY);
+          const q: DailyQuotaStore =
+            rawQ && rawQ.day === t
+              ? {
+                  day: t,
+                  spinsUsedToday: Math.min(
+                    Math.max(0, Number(rawQ.spinsUsedToday ?? 0)),
+                    MAX_SPINS_PER_DAY,
+                  ),
+                  maxSpinsToday: MAX_SPINS_PER_DAY,
+                  ...(rawQ.profileKey ? { profileKey: rawQ.profileKey } : {}),
+                }
+              : {
+                  day: t,
+                  spinsUsedToday: 0,
+                  maxSpinsToday: MAX_SPINS_PER_DAY,
+                };
+          if (q.spinsUsedToday >= q.maxSpinsToday) {
+            persistQuota(q);
+            return "limit";
+          }
+          const { reward, index } = selectWeightedReward();
+          let expiresAt: Date;
+          if (now < deadline) {
+            expiresAt = deadline;
+          } else {
+            expiresAt = new Date(now.getTime());
+            expiresAt.setMonth(expiresAt.getMonth() + 1);
+          }
+          const usableFromIso = now.toISOString();
+          const expiresIso = expiresAt.toISOString();
+          const voucherCode = generateLocalVoucherCode(
+            reward.code ?? String(reward.id),
+          );
+          const spinReward: SpinReward = {
+            ...reward,
+            voucherDelayMinutes: 0,
+            voucherUsableFrom: usableFromIso,
+            voucherExpiresAt: expiresIso,
+          };
+          const angle = 360 / REWARDS.length;
+          const extraSpins = 6 + Math.floor(Math.random() * 3);
+          const offset = (Math.random() - 0.5) * (angle * 0.42);
+          const target =
+            extraSpins * 360 + (360 - (index * angle + angle / 2)) + offset;
+          const receivedAt = now.toISOString();
+          const duration = 3000 + Math.floor(Math.random() * 800);
+          persistProfile({ name, phone });
+          addRewardToWallet(spinReward, receivedAt, {
+            voucherCode,
+            locationId: DEFAULT_PLAY_LOCATION,
+          });
+          persistQuota({
+            day: t,
+            spinsUsedToday: q.spinsUsedToday + 1,
+            maxSpinsToday: MAX_SPINS_PER_DAY,
+            profileKey: createProfileKey(name, phone),
+          });
+          return { duration, target, spinReward };
+        },
+      );
 
       if (outcome === "ended") {
         setFormError("Chương trình quay thưởng đã kết thúc.");
@@ -678,7 +680,10 @@ export default function PageContent() {
         const consumedReward = current.items.find(
           (item) => item.id === rewardId,
         );
-        if (consumedReward && isVoucherExpired(consumedReward.voucherExpiresAt)) {
+        if (
+          consumedReward &&
+          isVoucherExpired(consumedReward.voucherExpiresAt)
+        ) {
           throw new Error("Voucher này đã hết hạn sử dụng.");
         }
         const voucherCode = consumedReward?.voucherCodes?.[0];
@@ -808,7 +813,6 @@ export default function PageContent() {
               <span className="font-bold">SĐT:</span>{" "}
               {userInfo.phone.trim() || "Chưa cập nhật"}
             </p>
-            
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-2 rounded-2xl bg-white p-1.5">
@@ -1060,7 +1064,8 @@ export default function PageContent() {
                 >
                   <div className="space-y-3 text-sm font-semibold leading-6 text-[#6c1a1f] bg-white p-2 rounded-xl">
                     <p>
-                      Voucher có thể dùng ngay sau khi trúng, hạn sử dụng đến ngày 30/06/2026 và mỗi ngày dùng tối đa 3 voucher.
+                      Voucher có thể dùng ngay sau khi trúng, hạn sử dụng đến
+                      ngày 30/06/2026 và mỗi ngày dùng tối đa 3 voucher.
                     </p>
                   </div>
                   <button
