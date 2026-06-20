@@ -18,8 +18,9 @@ type Wallet = {
 
 const APP_VERSION_KEY = "xfc-app-version";
 const WALLET_KEY = "xfc-wallet-v2";
+/** Ngày 15/06/2026 là ngày quay cuối cùng; bump version để kích hoạt reset. */
 const DEPLOYMENT_VERSION =
-  process.env.NEXT_PUBLIC_DEPLOYMENT_VERSION || "2026-05-30-v3";
+  process.env.NEXT_PUBLIC_DEPLOYMENT_VERSION || "2026-06-15-v1";
 
 export function initializeAutoReset() {
   if (typeof window === "undefined") return;
@@ -48,7 +49,8 @@ function resetVouchersInLocalStorage() {
     const wallet: Wallet = JSON.parse(walletData);
     const year = new Date().getFullYear();
 
-    // June 1 to June 30
+    // Spin period: 1/6 - 15/6 (last spin day = 15/6 today)
+    // Voucher validity: 1/6 - 30/6 (last day to USE voucher = 30/6)
     const juneFirst = new Date(year, 5, 1, 0, 0, 0).toISOString();
     const juneThirtieth = new Date(year, 5, 30, 23, 59, 59, 999).toISOString();
 

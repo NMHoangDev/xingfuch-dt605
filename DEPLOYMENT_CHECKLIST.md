@@ -3,7 +3,9 @@
 ## 🎯 Mục tiêu
 
 - ✅ Clear cache toàn bộ (desktop & mobile)
-- ✅ Reset hạn voucher → 1/6 - 30/6 tự động
+- ✅ Reset hạn voucher → 1/6 - 30/6 tự động (dù quay ngày nào cũng ra hạn này)
+- ✅ Hạn cuối vòng quay: **15/06/2026** (hôm nay)
+- ✅ Hạn cuối dùng voucher: **30/06/2026**
 - ✅ Không cần user làm gì
 
 ---
@@ -38,7 +40,7 @@ Vào **https://vercel.com/dashboard**
 
 | Key                              | Value                  | Scope                            |
 | -------------------------------- | ---------------------- | -------------------------------- |
-| `NEXT_PUBLIC_DEPLOYMENT_VERSION` | `2026-05-30`           | Production, Preview, Development |
+| `NEXT_PUBLIC_DEPLOYMENT_VERSION` | `2026-06-15`           | Production, Preview, Development |
 | `ADMIN_SECRET_KEY`               | `your-secret-key-here` | Production                       |
 
 ### ⏳ Bước 4: Deploy
@@ -147,7 +149,7 @@ Response:
 
 ```bash
 # 1. Set env
-export NEXT_PUBLIC_DEPLOYMENT_VERSION=2026-05-30
+export NEXT_PUBLIC_DEPLOYMENT_VERSION=2026-06-15
 
 # 2. Run dev
 npm run dev

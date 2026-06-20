@@ -1,12 +1,13 @@
 #!/bin/bash
 
 # Deployment post-build hook for Vercel
-# Automatically resets vouchers to 1/6 - 30/6 after deployment
+# Automatically resets vouchers to 1/6 - 30/6 after deployment.
+# Spin period ends 15/6; voucher can still be used until 30/6.
 # Run: vercel env pull && sh vercel-post-build.sh
 
 set -e
 
-echo "🚀 Post-deployment: Resetting vouchers..."
+echo "🚀 Post-deployment: Resetting vouchers (hạn dùng voucher: 1/6 - 30/6, hạn chót quay: 15/6)..."
 
 # Check if DEPLOYMENT_URL exists
 if [ -z "$VERCEL_ENV" ]; then

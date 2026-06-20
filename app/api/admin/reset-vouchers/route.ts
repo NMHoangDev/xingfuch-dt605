@@ -7,7 +7,7 @@ export const dynamic = "force-static";
 
 /**
  * Admin endpoint: Reset all voucher expiry dates to 1/6 - 30/6
- * Regardless of when they were won
+ * Regardless of when they were won. Spin period ends 15/6 (today).
  *
  * Usage: POST /api/admin/reset-vouchers?key=YOUR_SECRET_KEY
  */

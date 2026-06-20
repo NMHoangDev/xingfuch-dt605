@@ -451,14 +451,16 @@ export default function PageContent() {
     [wallet.items],
   );
 
-  /** Giới hạn lượt quay theo localStorage + ngày lịch */
-  const isCampaignEnded =
+  /** Hạn cuối vòng quay: 15/06/2026 23:59:59 (giờ VN = UTC+7, tức 16:59:59Z).
+   *  Voucher trúng vẫn dùng được đến 30/06/2026 (xem hằng số VOUCHER_EXPIRES_AT bên dưới). */
+  const SPIN_DEADLINE_UTC = "2026-06-15T16:59:59.999Z";
+  const isSpinPeriodOver =
     typeof window !== "undefined"
-      ? new Date() >= new Date("2026-06-30T16:59:59.999Z")
+      ? new Date() >= new Date(SPIN_DEADLINE_UTC)
       : false;
   const hasReachedSpinLimit =
     quota?.day === todayKey() && quota.spinsUsedToday >= quota.maxSpinsToday;
-  const localSpinBlocked = hasReachedSpinLimit || isCampaignEnded;
+  const localSpinBlocked = hasReachedSpinLimit || isSpinPeriodOver;
 
   const persistWallet = (nextWallet: WalletStore) => {
     setWallet(nextWallet);
@@ -551,7 +553,7 @@ export default function PageContent() {
         (): SpinOk | "limit" | "ended" => {
           const t = todayKey();
           const now = new Date();
-          const deadline = new Date("2026-06-30T16:59:59.999Z");
+          const deadline = new Date(SPIN_DEADLINE_UTC);
           if (now >= deadline) {
             return "ended";
           }
@@ -1041,7 +1043,7 @@ export default function PageContent() {
               >
                 {isSpinning
                   ? "Đang quay..."
-                  : isCampaignEnded
+                  : isSpinPeriodOver
                     ? "Chương trình đã kết thúc"
                     : hasReachedSpinLimit
                       ? "Đã hết lượt quay hôm nay"
@@ -1070,7 +1072,8 @@ export default function PageContent() {
                   <div className="space-y-3 text-sm font-semibold leading-6 text-[#6c1a1f] bg-white p-2 rounded-xl">
                     <p>
                       Voucher có thể dùng ngay sau khi trúng, hạn sử dụng đến
-                      ngày 30/06/2026 và mỗi ngày dùng tối đa 3 voucher.
+                      ngày 30/06/2026 và mỗi ngày dùng tối đa 3 voucher. Vòng
+                      quay đóng sau 23:59 ngày 15/06/2026.
                     </p>
                   </div>
                   <button

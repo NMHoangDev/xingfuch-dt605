@@ -41,7 +41,7 @@ Vào **Vercel Dashboard → Settings → Environment Variables**
 Thêm 2 biến:
 
 ```
-NEXT_PUBLIC_DEPLOYMENT_VERSION = 2026-05-30
+NEXT_PUBLIC_DEPLOYMENT_VERSION = 2026-06-15
 ADMIN_SECRET_KEY = your-secret-key-123
 ```
 
@@ -179,7 +179,7 @@ Kiểm tra: created_at = 2026-05-31, voucher_usable_from = 2026-06-01
 ### Test locally:
 
 ```bash
-NEXT_PUBLIC_DEPLOYMENT_VERSION=2026-05-30 npm run dev
+NEXT_PUBLIC_DEPLOYMENT_VERSION=2026-06-15 npm run dev
 # Vào browser console, check console logs
 ```
 
